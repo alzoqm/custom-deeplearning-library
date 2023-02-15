@@ -8,19 +8,22 @@ CUDA = nvcc
 CUDA_FLAGS = -std=c++11
 
 # Define the object files
-OBJS =	matoper.o	#tensor.o	
+OBJS =	main.o	matOper.o	tensor.o	
 
 # Define the target
 $(TARGET): $(OBJS)
 	$(CUDA) -o $(TARGET) $(OBJS)
 
+main.o: main.cu matOper.h tensor.h
+	$(CUDA) $(CUDA_FLAGS) -c main.cu
+
 # Define the matoper.o object file rule
-matoper.o: matoper.cu tensor.h
-	$(CUDA) $(CUDA_FLAGS) -c matoper.cu
+matOper.o: matOper.cu matOper.cuh tensor.h
+	$(CUDA) $(CUDA_FLAGS) -c matOper.cu
 
 # Define the tensor.o object file rule
-# tensor.o: tensor.cu tensor.h
-# 	$(CUDA) $(CUDA_FLAGS) -c tensor.cu
+tensor.o: tensor.cu tensor.h
+	$(CUDA) $(CUDA_FLAGS) -c tensor.cu
 
 # Define the clean rule
 clean:
