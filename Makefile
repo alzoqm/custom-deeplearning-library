@@ -18,7 +18,7 @@ main.o: main.cu matOper.h tensor.h
 	$(CUDA) $(CUDA_FLAGS) -c main.cu
 
 # Define the matoper.o object file rule
-matOper.o: matOper.cu matOper.cuh tensor.h
+matOper.o: matOper.cu matOper.h tensor.h
 	$(CUDA) $(CUDA_FLAGS) -c matOper.cu
 
 # Define the tensor.o object file rule
