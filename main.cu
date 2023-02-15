@@ -1,5 +1,5 @@
-#include "tensor.cuh"
-#include "matOper.cuh"
+#include "tensor.h"
+#include "matOper.h"
 
 __host__ int main()
 {
