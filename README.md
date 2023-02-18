@@ -5,8 +5,11 @@
 23-02-16 <br>
 sum, max, min, reduce 코드 구현, Tensor class에 차원 축소 및 확장 기능 추가(squeeze, unsqueeze)<br>
 
+23-02-18 <br>
+mat_mul 제외 다른 차원의 행렬 연산 지원, Tensor class에 reshape기능 추가<br>
+
 다음에 추가할 것<br>
-1. 다른 차원의 행렬끼리도 연산 지원하기 <br>
+1. 다른 차원의 행렬끼리도 연산 지원하기(mat_mul만 남음) <br>
 2. half type class 구현 <br>
 
 ## test with colab
