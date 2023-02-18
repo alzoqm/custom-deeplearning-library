@@ -2,11 +2,11 @@
 #define _TENSOR_H_
 
 #include <cuda_runtime.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
-#include <stdio.h>
-#include <time.h>
-#include <unistd.h>
+#include <cstdio>
+#include <ctime>
+// #include <unistd.h>
 
 using namespace std;
 
@@ -34,6 +34,7 @@ public:
     void cpu(); // allocate the tensor data from the GPU memory to the CPU memory.
     void squeeze(int dim);
     void unsqueeze(int dim);
+    void reshape(short *reshape_array, int dim);
 };
 
 #endif

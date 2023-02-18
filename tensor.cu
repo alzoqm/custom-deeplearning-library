@@ -738,3 +738,51 @@ void Tensor<T>::unsqueeze(int dim)
     delete temp_tensor_shape;
     return;
 }
+
+template <typename T>
+void Tensor<T>::reshape(short *reshape_array, int dim)
+{
+    int temp_reshape_sum=1;
+    unsigned int reshape_sum = 1;
+    char m1_check = 0; // -1 check
+    char m1_index = -1;
+    for(int i=0; i<dim; i++)
+    {
+        if(reshape_array[i] == -1)
+        {
+            m1_check += 1;
+            m1_index = i;
+        }
+        temp_reshape_sum *= reshape_array[i];
+    }
+    if(m1_check >= 2)
+    {
+        throw std::runtime_error("The value '-1' can only be used once.\n");
+    }
+    if(temp_reshape_sum < 0) // using -1
+    {
+        reshape_sum = (-temp_reshape_sum);
+        printf("value: %d\n", reshape_sum);
+        if(this->sum_size % reshape_sum!=0)
+        {
+            throw std::runtime_error("The total size of the original tensor and the size of the newly defined shape must be the same.1\n");
+        }
+        short m1_value = this->sum_size / reshape_sum;
+        reshape_array[m1_index] = m1_value;
+        reshape_sum *= reshape_array[m1_index];
+    }
+    else
+    {
+        reshape_sum = temp_reshape_sum;
+    }
+    
+    if(this->sum_size != reshape_sum)
+    {
+        printf("%d %d\n", this->sum_size, reshape_sum);
+        throw std::runtime_error("The total size of the original tensor and the size of the newly defined shape must be the same.\n");
+    }
+    delete this->tensor_shape;
+    this->dim = dim;
+    this->tensor_shape = new unsigned short[this->dim];
+    memcpy(this->tensor_shape, reshape_array, sizeof(ushort)*dim);
+}
