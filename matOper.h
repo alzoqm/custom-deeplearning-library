@@ -24,7 +24,10 @@ template <typename T>
 __global__ void MatrixMul(T *d_a, T *d_b, T *d_c, unsigned int n, unsigned int m, int max_b); // normal multiplication
 
 template <typename T>
-__global__ void Matrix_Mul(T *a,T *b, T *c, unsigned int bs, unsigned int n, unsigned int m, unsigned int p);
+__global__ void Matrix_Mul_a(T *a,T *b, T *c, unsigned int bs, unsigned int n, unsigned int m, unsigned int p, int max_a);
+
+template <typename T>
+__global__ void Matrix_Mul_b(T *a,T *b, T *c, unsigned int bs, unsigned int n, unsigned int m, unsigned int p, int max_b);
 
 template <typename T>
 void cpu_Matrix_Add(T &a, T &b, T &c);
@@ -45,7 +48,10 @@ template <typename T>
 void cpu_MatrixMul(T &a, T &b, T &c);
 
 template <typename T>
-void cpu_Matrix_Mul(T *a, T *b, T *c, unsigned short bs, unsigned short n, unsigned short m, unsigned short p);
+void cpu_Matrix_Mul_a(T *a, T *b, T *c, unsigned short bs, unsigned short n, unsigned short m, unsigned short p, int max_a);
+
+template <typename T>
+void cpu_Matrix_Mul_b(T *a, T *b, T *c, unsigned short bs, unsigned short n, unsigned short m, unsigned short p, int max_b);
 
 template <typename T>
 void matoper_check_shape1(Tensor<T> &a, Tensor<T> &b, bool &check_a_b_dim ,char &min_dim, char &max_dim, char &diff);

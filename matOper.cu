@@ -70,7 +70,7 @@ __global__ void MatrixMul(T *d_a, T *d_b, T *d_c, unsigned int n, unsigned int m
 }
 
 template <typename T>
-__global__ void Matrix_Mul(T *a,T *b, T *c, unsigned int bs, unsigned int n, unsigned int m, unsigned int p)
+__global__ void Matrix_Mul_a(T *a,T *b, T *c, unsigned int bs, unsigned int n, unsigned int m, unsigned int p, int max_a)
 { 
     int l = blockIdx.x * blockDim.x + threadIdx.x;
     int i = blockIdx.y * blockDim.y + threadIdx.y; 
@@ -81,8 +81,27 @@ __global__ void Matrix_Mul(T *a,T *b, T *c, unsigned int bs, unsigned int n, uns
         T sum = 0.;
         for(int k = 0; k < m; k++) 
         {
-            //sum += a[batch_size*n*m + row * m + i] * b[batch_size*m*p + i * p + col];
-            sum += a[l*n*m + i * m + k] * b[l*m*p + k * p + j];
+            //sum += a[l*n*m + i * m + k] * b[l*m*p + k * p + j];
+            sum += a[(l%max_a)*n*m + i * m + k] * b[l*m*p + k * p + j];
+        }
+        c[l*n*p + i * p + j] = sum;
+    }
+}
+
+template <typename T>
+__global__ void Matrix_Mul_b(T *a,T *b, T *c, unsigned int bs, unsigned int n, unsigned int m, unsigned int p, int max_b)
+{ 
+    int l = blockIdx.x * blockDim.x + threadIdx.x;
+    int i = blockIdx.y * blockDim.y + threadIdx.y; 
+    int j = blockIdx.z * blockDim.z + threadIdx.z;
+    
+    if(l < bs && i < n && j < p ) 
+    {
+        T sum = 0.;
+        for(int k = 0; k < m; k++) 
+        {
+            //sum += a[l*n*m + i * m + k] * b[l*m*p + k * p + j];
+            sum += a[l*n*m + i * m + k] * b[(l%max_b)*m*p + k * p + j];
         }
         c[l*n*p + i * p + j] = sum;
     }
@@ -167,7 +186,7 @@ void cpu_MatrixMul(T &a, T &b, T &c)
 }
 
 template <typename T>
-void cpu_Matrix_Mul(T *a, T *b, T *c, unsigned short bs, unsigned short n, unsigned short m, unsigned short p)
+void cpu_Matrix_Mul_a(T *a, T *b, T *c, unsigned short bs, unsigned short n, unsigned short m, unsigned short p, int max_a)
 {
     for(int l=0; l<bs; l++)
     {
@@ -178,7 +197,8 @@ void cpu_Matrix_Mul(T *a, T *b, T *c, unsigned short bs, unsigned short n, unsig
                 T sum = 0.;
                 for (int k = 0; k < m; ++k) 
                 {
-                    sum += a[l*n*m + i * m + k] * b[l*m*p + k * p + j];
+                    //sum += a[l*n*m + i * m + k] * b[l*m*p + k * p + j];
+                    sum += a[(l%max_a)*n*m + i * m + k] * b[l*m*p + k * p + j];
                 }
                 c[l*n*p + i * p + j] = sum;
             }
@@ -187,7 +207,29 @@ void cpu_Matrix_Mul(T *a, T *b, T *c, unsigned short bs, unsigned short n, unsig
 }
 
 template <typename T>
-void matoper_check_shape1(Tensor<T> &a, Tensor<T> &b, bool &check_a_b_dim ,char &min_dim, char &max_dim, char &diff)
+void cpu_Matrix_Mul_b(T *a, T *b, T *c, unsigned short bs, unsigned short n, unsigned short m, unsigned short p, int max_b)
+{
+    for(int l=0; l<bs; l++)
+    {
+        //printf("%d\n\n", l%max_b*m*p );
+        for (int i = 0; i < n; ++i) 
+        {
+            for (int j = 0; j < p; ++j) 
+            {
+                T sum = 0.;
+                for (int k = 0; k < m; ++k) 
+                {
+                    //sum += a[l*n*m + i * m + k] * b[l*m*p + k * p + j];
+                    sum += a[l*n*m + i * m + k] * b[(l%max_b)*m*p + k * p + j];
+                }
+                c[l*n*p + i * p + j] = sum;
+            }
+        }
+    }
+}
+
+template <typename T>
+void check_shape1(Tensor<T> &a, Tensor<T> &b, bool &check_a_b_dim ,char &min_dim, char &max_dim, char &diff)
 {
     if(a.dim < b.dim)
     {
@@ -237,7 +279,7 @@ void matoper_check_shape1(Tensor<T> &a, Tensor<T> &b, bool &check_a_b_dim ,char 
 }
 
 template <typename T>
-void matoper_check_shape2(Tensor<T> &a, Tensor<T> &b, Tensor<T> &c, bool &check_a_b_dim ,char &min_dim, char &max_dim, char &diff)
+void check_shape2(Tensor<T> &a, Tensor<T> &b, Tensor<T> &c, bool &check_a_b_dim ,char &min_dim, char &max_dim, char &diff)
 {
     if(a.dim < b.dim)
     {
@@ -327,7 +369,7 @@ Tensor<T> matadd(Tensor<T> &a, Tensor<T> &b)
     char min_dim=-1;
     char max_dim=-1;
     char diff=0;
-    matoper_check_shape1(a, b, check_a_b_dim, min_dim, max_dim, diff);
+    check_shape1(a, b, check_a_b_dim, min_dim, max_dim, diff);
     if(check_a_b_dim==true)
     {
         unsigned short c_shape[b.dim];
@@ -377,7 +419,7 @@ void matadd(Tensor<T> &a, Tensor<T> &b, Tensor<T> &c)
     char min_dim=-1;
     char max_dim=-1;
     char diff=0;
-    matoper_check_shape2(a, b, c, check_a_b_dim, min_dim, max_dim, diff);
+    check_shape2(a, b, c, check_a_b_dim, min_dim, max_dim, diff);
 
     if(a.is_cuda==true)
     {
@@ -415,7 +457,7 @@ Tensor<T> matsub(Tensor<T> &a, Tensor<T> &b)
     char min_dim=-1;
     char max_dim=-1;
     char diff=0;
-    matoper_check_shape1(a, b, check_a_b_dim, min_dim, max_dim, diff);
+    check_shape1(a, b, check_a_b_dim, min_dim, max_dim, diff);
     if(check_a_b_dim==true)
     {
         unsigned short c_shape[b.dim];
@@ -465,7 +507,7 @@ void matsub(Tensor<T> &a, Tensor<T> &b, Tensor<T> &c)
     char min_dim=-1;
     char max_dim=-1;
     char diff=0;
-    matoper_check_shape2(a, b, c, check_a_b_dim, min_dim, max_dim, diff);
+    check_shape2(a, b, c, check_a_b_dim, min_dim, max_dim, diff);
     if(a.is_cuda==true)
     {
         dim3 block(16, 16);
@@ -502,7 +544,7 @@ Tensor<T> matdiv(Tensor<T> &a, Tensor<T> &b)
     char min_dim=-1;
     char max_dim=-1;
     char diff=0;
-    matoper_check_shape1(a, b, check_a_b_dim, min_dim, max_dim, diff);
+    check_shape1(a, b, check_a_b_dim, min_dim, max_dim, diff);
     if(check_a_b_dim==true)
     {
         unsigned short c_shape[b.dim];
@@ -552,7 +594,7 @@ void matdiv(Tensor<T> &a, Tensor<T> &b, Tensor<T> &c)
     char min_dim=-1;
     char max_dim=-1;
     char diff=0;
-    matoper_check_shape2(a, b, c, check_a_b_dim, min_dim, max_dim, diff);
+    check_shape2(a, b, c, check_a_b_dim, min_dim, max_dim, diff);
     if(a.is_cuda==true)
     {
         dim3 block(16, 16);
@@ -590,7 +632,7 @@ Tensor<T> matmul(Tensor<T> &a, Tensor<T> &b)
     char min_dim=-1;
     char max_dim=-1;
     char diff=0;
-    matoper_check_shape1(a, b, check_a_b_dim, min_dim, max_dim, diff);
+    check_shape1(a, b, check_a_b_dim, min_dim, max_dim, diff);
     if(check_a_b_dim==true)
     {
         unsigned short c_shape[b.dim];
@@ -640,7 +682,7 @@ void matmul(Tensor<T> &a, Tensor<T> &b, Tensor<T> &c)
     char min_dim=-1;
     char max_dim=-1;
     char diff=0;
-    matoper_check_shape2(a, b, c, check_a_b_dim, min_dim, max_dim, diff);
+    check_shape2(a, b, c, check_a_b_dim, min_dim, max_dim, diff);
     if(a.is_cuda==true)
     {
         dim3 block(16, 16);
@@ -673,25 +715,52 @@ void matmul(Tensor<T> &a, Tensor<T> &b, Tensor<T> &c)
 template <typename T>
 Tensor<T> mat_mul(Tensor<T> &a, Tensor<T> &b)
 {
-    if (a.dim != b.dim) 
+    bool check_a_b_dim = false;
+    char min_dim=-1;
+    char max_dim=-1;
+    char diff=0;
+    if(a.dim < b.dim)
     {
-        throw std::invalid_argument("tensor1 and tensor2 dimensions do not match");
+        min_dim = a.dim;
+        max_dim = b.dim;
+        diff = max_dim-min_dim;
+        check_a_b_dim = true; // a < b
     }
-
-    if (b.dim >= 2) 
+    else
     {
-        unsigned int b_n = b.tensor_shape[b.dim-2];
-        if (a.m != b_n) 
+        min_dim = b.dim;
+        max_dim = a.dim;
+        diff = max_dim-min_dim;
+    }
+    if(a.m != b.tensor_shape[b.dim-2])
+    {
+        throw std::runtime_error("tensor1 col size and tensor2 row size must be same\n");
+    }
+    if(check_a_b_dim==true)
+    {
+        if(max_dim != 2)
         {
-            throw std::invalid_argument("tensor1 column and tensor2 row do not match");
+            for (int i = max_dim-3; i >= diff; i--) 
+            {
+                if (a.tensor_shape[i-diff] != b.tensor_shape[i]) 
+                {
+                    throw std::invalid_argument("tensor1 and tensor2 shapes is different\n");
+                }
+            }
         }
     }
-
-    for (int i = 0; i < a.dim-2; i++) 
+    else
     {
-        if (a.tensor_shape[i] != b.tensor_shape[i]) 
+        if(max_dim != 2)
         {
-            throw std::invalid_argument("tensor1 and tensor2 shapes do not match");
+            for (int i = 0; i <min_dim-2; i++)
+            {
+                if (a.tensor_shape[i+diff] != b.tensor_shape[i]) 
+                {
+                    
+                    throw std::invalid_argument("tensor1 and tensor2 shapes is different\n");
+                }
+            }
         }
     }
 
@@ -699,89 +768,184 @@ Tensor<T> mat_mul(Tensor<T> &a, Tensor<T> &b)
     {
         if (a.is_cuda) 
         {
-            throw std::runtime_error("tensor1 is on CUDA device but tensor2 is on CPU");
+            throw std::runtime_error("tensor1 is on CUDA but tensor2 is on CPU\n");
         }
         else 
         {
-            throw std::runtime_error("tensor1 is on CPU but tensor2 is on CUDA device");
+            throw std::runtime_error("tensor1 is on CPU but tensor2 is on CUDA\n");
         }
     }
-    char c_dim = a.dim;
+    char c_dim = max_dim;
     unsigned short c_shape[c_dim];
-    for(int i=0; i<a.dim-2; i++)
-    {
-        c_shape[i] = a.tensor_shape[i];
-    }
-    c_shape[c_dim-2] = a.tensor_shape[c_dim-2];
-    c_shape[c_dim-1] = b.tensor_shape[c_dim-1];
-    Tensor<T> c(c_shape, c_dim);
     int a_n = a.tensor_shape[a.dim-2];
-    int a_b = a.n / a_n;
+    int max_a = a.n / a_n;
     int a_m = a.m;
+    int max_b = b.n / b.tensor_shape[b.dim-2];
     int b_m = b.m;
-    if(a.is_cuda==true)
+    if(check_a_b_dim==true)
     {
-        c.cuda();
-        // dim3 block(16, 16);
-        // dim3 grid((c.n + block.x - 1) / block.x, (c.m + block.y - 1) / block.y);
-        dim3 block(4, 16, 16);
-        dim3 grid((a_b + block.x - 1) / block.x, (a_n + block.y - 1) / block.y, (b_m + block.z - 1) / block.z);
-        Matrix_Mul<T><<<grid, block>>>(a.value, b.value, c.value, a_b, a_n, a_m, b_m);
-        return c;
+        for(int i=0; i<max_dim-2; i++)
+        {
+            c_shape[i] = b.tensor_shape[i];
+        }
+        c_shape[c_dim-2] = a.tensor_shape[a.dim-2];
+        c_shape[c_dim-1] = b.m;
+        Tensor<T> c(c_shape, c_dim);
+
+        if(a.is_cuda==true)
+        {
+            c.cuda();
+            dim3 block(4, 16, 16);
+            dim3 grid((max_b + block.x - 1) / block.x, (a_n + block.y - 1) / block.y, (b_m + block.z - 1) / block.z);
+            Matrix_Mul_a<T><<<grid, block>>>(a.value, b.value, c.value, max_b, a_n, a_m, b_m, max_a);
+            return c;
+        }
+        else
+        {
+            cpu_Matrix_Mul_a<T>(a.value, b.value, c.value, max_b, a_n, a_m, b_m, max_a);
+            return c;
+        }
     }
     else
     {
-        cpu_Matrix_Mul<T>(a.value, b.value, c.value, a_b, a_n, a_m, b_m);
-        return c;
+        for(int i=0; i<max_dim-2; i++)
+        {
+            c_shape[i] = a.tensor_shape[i];
+        }
+        c_shape[c_dim-2] = a.tensor_shape[a.dim-2];
+        c_shape[c_dim-1] = b.m;
+        Tensor<T> c(c_shape, c_dim);
+
+        if(a.is_cuda==true)
+        {
+            c.cuda();
+            dim3 block(4, 16, 16);
+            dim3 grid((max_a + block.x - 1) / block.x, (a_n + block.y - 1) / block.y, (b_m + block.z - 1) / block.z);
+            Matrix_Mul_b<T><<<grid, block>>>(a.value, b.value, c.value, max_a, a_n, a_m, b_m, max_b);
+            return c;
+        }
+        else
+        {
+            cpu_Matrix_Mul_b<T>(a.value, b.value, c.value, max_a, a_n, a_m, b_m, max_b);
+            return c;
+        }
     }
+
 }
 
 template <typename T>
 void mat_mul(Tensor<T> &a, Tensor<T> &b, Tensor<T> &c)
 {
-    if (a.dim != b.dim) 
+    bool check_a_b_dim = false;
+    char min_dim=-1;
+    char max_dim=-1;
+    char diff=0;
+    if(a.dim < b.dim)
     {
-        throw std::invalid_argument("tensor1 and tensor2 dimensions do not match");
+        min_dim = a.dim;
+        max_dim = b.dim;
+        diff = max_dim-min_dim;
+        check_a_b_dim = true; // a < b
     }
-
-    unsigned int b_n = b.tensor_shape[b.dim-2];
-    if (a.m != b_n) 
+    else
     {
-        throw std::invalid_argument("tensor1 columns and tensor2 rows do not match");
+        min_dim = b.dim;
+        max_dim = a.dim;
+        diff = max_dim-min_dim;
     }
-
-    for (int i = 0; i < a.dim-2; i++) 
+    if(a.m != b.tensor_shape[b.dim-2])
     {
-        if (a.tensor_shape[i] != b.tensor_shape[i]) 
+        throw std::runtime_error("tensor1 col size and tensor2 row size must be same\n");
+    }
+    if(check_a_b_dim==true)
+    {
+        if(max_dim != 2)
         {
-            throw std::invalid_argument("tensor1 and tensor2 shapes do not match");
+            for (int i = max_dim-3; i >= diff; i--) 
+            {
+                if (a.tensor_shape[i-diff] != b.tensor_shape[i]) 
+                {
+                    throw std::invalid_argument("tensor1 and tensor2 shapes is different\n");
+                }
+            }
         }
+        for(int i=0; i<max_dim-2; i++)
+        {
+            if(b.tensor_shape[i] != c.tensor_shape[i])
+            {
+                throw std::invalid_argument("input and output shapes is different\n");
+            }
+        }
+    }
+    else
+    {
+        if(max_dim != 2)
+        {
+            for (int i = 0; i <min_dim-2; i++)
+            {
+                if (a.tensor_shape[i+diff] != b.tensor_shape[i]) 
+                {
+                    
+                    throw std::invalid_argument("tensor1 and tensor2 shapes is different\n");
+                }
+            }
+            for(int i=0; i<max_dim-2; i++)
+            {
+                if(a.tensor_shape[i] != c.tensor_shape[i])
+                {
+                    throw std::invalid_argument("input and output shapes is different\n");
+                }
+            }
+        }
+    }
+    if(c.m != b.m || c.tensor_shape[c.dim-2] != a.tensor_shape[a.dim-2])
+    {
+         throw std::invalid_argument("input and output shapes is different1\n");
     }
 
     if (a.is_cuda != b.is_cuda || a.is_cuda != c.is_cuda) 
     {
         if (a.is_cuda) 
         {
-            throw std::runtime_error("tensor1 is on CUDA device but tensor2/output is on CPU");
+            throw std::runtime_error("tensor1 is on CUDA but tensor2/output is on CPU\n");
         }
         else 
         {
-            throw std::runtime_error("tensor1 is on CPU but tensor2/output is on CUDA device");
+            throw std::runtime_error("tensor1 is on CPU but tensor2/output is on CUDA\n");
         }
     }
+
     int a_n = a.tensor_shape[a.dim-2];
-    int a_b = a.n / a_n;
+    int max_a = a.n / a_n;
     int a_m = a.m;
+    int max_b = b.n / b.tensor_shape[b.dim-2];
     int b_m = b.m;
-    if(a.is_cuda==true)
+    if(check_a_b_dim==true)
     {
-        c.cuda();
-        dim3 block(4, 16, 16);
-        dim3 grid((a_b + block.x - 1) / block.x, (a_n + block.y - 1) / block.y, (b_m + block.z - 1) / block.z);
-        Matrix_Mul<T><<<grid, block>>>(a.value, b.value, c.value, a_b, a_n, a_m, b_m);
+        if(a.is_cuda==true)
+        {
+            c.cuda();
+            dim3 block(4, 16, 16);
+            dim3 grid((max_b + block.x - 1) / block.x, (a_n + block.y - 1) / block.y, (b_m + block.z - 1) / block.z);
+            Matrix_Mul_a<T><<<grid, block>>>(a.value, b.value, c.value, max_b, a_n, a_m, b_m, max_a);
+        }
+        else
+        {
+            cpu_Matrix_Mul_a<T>(a.value, b.value, c.value, max_b, a_n, a_m, b_m, max_a);
+        }
     }
     else
     {
-        cpu_Matrix_Mul<T>(a.value, b.value, c.value, a_b, a_n, a_m, b_m);
+        if(a.is_cuda==true)
+        {
+            c.cuda();
+            dim3 block(4, 16, 16);
+            dim3 grid((max_a + block.x - 1) / block.x, (a_n + block.y - 1) / block.y, (b_m + block.z - 1) / block.z);
+            Matrix_Mul_b<T><<<grid, block>>>(a.value, b.value, c.value, max_a, a_n, a_m, b_m, max_b);
+        }
+        else
+        {
+            cpu_Matrix_Mul_b<T>(a.value, b.value, c.value, max_a, a_n, a_m, b_m, max_b);
+        }
     }
 }
