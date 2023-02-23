@@ -3,16 +3,12 @@
 
 __host__ int main()
 {
-    srand(time(NULL));
-    unsigned short size1[] = {2, 128, 256};
-    unsigned short size2[] = {2, 256, 128};
-    unsigned short size3[] = {2, 128, 128};
-
-    Tensor<double> tensor1(size1, sizeof(size1) / sizeof(unsigned short));
-    Tensor<double> tensor2(size2, sizeof(size2) / sizeof(unsigned short));
-    Tensor<double> tensor3(size3, sizeof(size3) / sizeof(unsigned short));
-    Tensor<double> tensor3_cpu(size3, sizeof(size3) / sizeof(unsigned short));
-
+srand(time(NULL));
+    Tensor<float> tensor1(2, {3, 512, 256});
+    Tensor<float> tensor2(1, {3, 256, 128});
+    Tensor<float> tensor3({3, 512, 128});
+    Tensor<float> tensor3_cpu({3, 512, 128});
+    Tensor<float> tensor4(3, {128});
     clock_t cpu_start = clock();
     mat_mul(tensor1, tensor2, tensor3_cpu);
     clock_t cpu_end = clock();
@@ -26,6 +22,7 @@ __host__ int main()
     tensor1.cuda();
     tensor2.cuda();
     tensor3.cuda();
+    tensor4.cuda();
     clock_t compile_end = clock();
     double compile_time = (double)(compile_end - compile_start) / CLOCKS_PER_SEC;
 
@@ -36,10 +33,11 @@ __host__ int main()
 
     clock_t gpu_start = clock();
     mat_mul(tensor1, tensor2, tensor3);
+    matadd(tensor3, tensor4, tensor3);
     clock_t gpu_end = clock();
     double gpu_time = (double)(gpu_end - gpu_start) / CLOCKS_PER_SEC;
 
-    printf("cpu_time: %f\n", compile_time);
+    printf("cpu_time: %f\n", cpu_time);
     printf("GPU compile time: %f\n", compile_time);
     printf("GPU time: %f\n", gpu_time);
     printf("GPU sum time: %f\n", compile_time+gpu_time);

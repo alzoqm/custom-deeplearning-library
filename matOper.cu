@@ -372,9 +372,9 @@ Tensor<T> matadd(Tensor<T> &a, Tensor<T> &b)
     check_shape1(a, b, check_a_b_dim, min_dim, max_dim, diff);
     if(check_a_b_dim==true)
     {
-        unsigned short c_shape[b.dim];
-        memcpy(c_shape, b.tensor_shape, sizeof(short)*b.dim);
-        Tensor<T> c(c_shape, b.dim);
+        vector<std::uint16_t> c_shape(max_dim);
+        copy(b.tensor_shape, b.tensor_shape + b.dim, c_shape.begin());
+        Tensor<T> c({ c_shape.begin(), c_shape.end() });
         if(a.is_cuda==true)
         {
             c.cuda();
@@ -392,9 +392,9 @@ Tensor<T> matadd(Tensor<T> &a, Tensor<T> &b)
     }
     else
     {
-        unsigned short c_shape[a.dim];
-        memcpy(c_shape, a.tensor_shape, sizeof(short)*a.dim);
-        Tensor<T> c(c_shape, a.dim);
+        vector<std::uint16_t> c_shape(max_dim);
+        copy(a.tensor_shape, a.tensor_shape + a.dim, c_shape.begin());
+        Tensor<T> c({ c_shape.begin(), c_shape.end() });
         if(a.is_cuda==true)
         {
             c.cuda();
@@ -460,9 +460,9 @@ Tensor<T> matsub(Tensor<T> &a, Tensor<T> &b)
     check_shape1(a, b, check_a_b_dim, min_dim, max_dim, diff);
     if(check_a_b_dim==true)
     {
-        unsigned short c_shape[b.dim];
-        memcpy(c_shape, b.tensor_shape, sizeof(short)*b.dim);
-        Tensor<T> c(c_shape, b.dim);
+        vector<std::uint16_t> c_shape(max_dim);
+        copy(b.tensor_shape, b.tensor_shape + b.dim, c_shape.begin());
+        Tensor<T> c({ c_shape.begin(), c_shape.end() });
         if(a.is_cuda==true)
         {
             c.cuda();
@@ -480,9 +480,9 @@ Tensor<T> matsub(Tensor<T> &a, Tensor<T> &b)
     }
     else
     {
-        unsigned short c_shape[a.dim];
-        memcpy(c_shape, a.tensor_shape, sizeof(short)*a.dim);
-        Tensor<T> c(c_shape, a.dim);
+        vector<std::uint16_t> c_shape(max_dim);
+        copy(a.tensor_shape, a.tensor_shape + a.dim, c_shape.begin());
+        Tensor<T> c({ c_shape.begin(), c_shape.end() });
         if(a.is_cuda==true)
         {
             c.cuda();
@@ -547,9 +547,9 @@ Tensor<T> matdiv(Tensor<T> &a, Tensor<T> &b)
     check_shape1(a, b, check_a_b_dim, min_dim, max_dim, diff);
     if(check_a_b_dim==true)
     {
-        unsigned short c_shape[b.dim];
-        memcpy(c_shape, b.tensor_shape, sizeof(short)*b.dim);
-        Tensor<T> c(c_shape, b.dim);
+        vector<std::uint16_t> c_shape(max_dim);
+        copy(b.tensor_shape, b.tensor_shape + b.dim, c_shape.begin());
+        Tensor<T> c({ c_shape.begin(), c_shape.end() });
         if(a.is_cuda==true)
         {
             c.cuda();
@@ -567,9 +567,9 @@ Tensor<T> matdiv(Tensor<T> &a, Tensor<T> &b)
     }
     else
     {
-        unsigned short c_shape[a.dim];
-        memcpy(c_shape, a.tensor_shape, sizeof(short)*a.dim);
-        Tensor<T> c(c_shape, a.dim);
+        vector<std::uint16_t> c_shape(max_dim);
+        copy(a.tensor_shape, a.tensor_shape + a.dim, c_shape.begin());
+        Tensor<T> c({ c_shape.begin(), c_shape.end() });
         if(a.is_cuda==true)
         {
             c.cuda();
@@ -635,9 +635,9 @@ Tensor<T> matmul(Tensor<T> &a, Tensor<T> &b)
     check_shape1(a, b, check_a_b_dim, min_dim, max_dim, diff);
     if(check_a_b_dim==true)
     {
-        unsigned short c_shape[b.dim];
-        memcpy(c_shape, b.tensor_shape, sizeof(short)*b.dim);
-        Tensor<T> c(c_shape, b.dim);
+        vector<std::uint16_t> c_shape(max_dim);
+        copy(b.tensor_shape, b.tensor_shape + b.dim, c_shape.begin());
+        Tensor<T> c({ c_shape.begin(), c_shape.end() });
         if(a.is_cuda==true)
         {
             c.cuda();
@@ -655,9 +655,9 @@ Tensor<T> matmul(Tensor<T> &a, Tensor<T> &b)
     }
     else
     {
-        unsigned short c_shape[a.dim];
-        memcpy(c_shape, a.tensor_shape, sizeof(short)*a.dim);
-        Tensor<T> c(c_shape, a.dim);
+        vector<std::uint16_t> c_shape(max_dim);
+        copy(a.tensor_shape, a.tensor_shape + a.dim, c_shape.begin());
+        Tensor<T> c({ c_shape.begin(), c_shape.end() });
         if(a.is_cuda==true)
         {
             c.cuda();
@@ -776,7 +776,7 @@ Tensor<T> mat_mul(Tensor<T> &a, Tensor<T> &b)
         }
     }
     char c_dim = max_dim;
-    unsigned short c_shape[c_dim];
+    vector<std::uint16_t> c_shape(max_dim);
     int a_n = a.tensor_shape[a.dim-2];
     int max_a = a.n / a_n;
     int a_m = a.m;
@@ -790,7 +790,7 @@ Tensor<T> mat_mul(Tensor<T> &a, Tensor<T> &b)
         }
         c_shape[c_dim-2] = a.tensor_shape[a.dim-2];
         c_shape[c_dim-1] = b.m;
-        Tensor<T> c(c_shape, c_dim);
+        Tensor<T> c({ c_shape.begin(), c_shape.end() });
 
         if(a.is_cuda==true)
         {
@@ -814,7 +814,7 @@ Tensor<T> mat_mul(Tensor<T> &a, Tensor<T> &b)
         }
         c_shape[c_dim-2] = a.tensor_shape[a.dim-2];
         c_shape[c_dim-1] = b.m;
-        Tensor<T> c(c_shape, c_dim);
+        Tensor<T> c({ c_shape.begin(), c_shape.end() });
 
         if(a.is_cuda==true)
         {
