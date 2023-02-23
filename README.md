@@ -12,5 +12,7 @@ half type class 구현 <br>
 half class 연산 추가 지원<br>
 nn 파일 생성 후 신경망 구현<br>
 
+23-02-23 repo 이름 변경<br>
+repo rename cuda_study -> deeplearning library <br>
 ## test with colab
 [<img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" />](https://colab.research.google.com/drive/13DRdZlK3QTPUS_Xy3xhGnW5yLXe_qCwg)
