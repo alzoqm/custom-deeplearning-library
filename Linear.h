@@ -10,18 +10,33 @@ class Linear
 private:
     Tensor<T> *W=nullptr;
     Tensor<T> *b=nullptr;
+    Tensor<T> *dW=nullptr;
+    Tensor<T> *db=nullptr;
+    bool have_bias=false;
 public:
     Tensor<T> *save_X=nullptr;
 public:
-    Linear(unsigned short *weight_shape, bool add_bias=true)
+    Linear(uint16_t in_dim, uint16_t out_dim, bool add_bias = true)
     {
-        this->W = new Tensor<T>(1, weight_shape, 2);
+        this->W = new Tensor<T>(1, {in_dim, out_dim}); // allocate memory using new operator
         if(add_bias==true)
         {
-            unsigned short *bias_shape = new unsigned short[1];
-            bias_shape[0] = weight_shape[1];
-            this->b = new Tensor<T>(2, bias_shape, 1);
+            this->have_bias = true;
+            this->b = new Tensor<T>(1, {out_dim}); // allocate memory using new operator
         }
+        else
+        {
+            this->have_bias = false;
+        }
+    }
+
+    ~Linear()
+    {
+        delete W;
+        delete b;
+        delete dW;
+        delete db;
+        delete save_X;
     }
 
     void weight_print()
@@ -37,13 +52,17 @@ public:
             printf("Bias: \n");
             this->b->print();
         }
+        return;
     }
 
     void print()
     {
         this->weight_print();
         printf("\n");
-        this->bias_print();
+        if(this->have_bias != false)
+        {
+            this->bias_print();
+        }
     }
     
     void cuda()
@@ -52,10 +71,6 @@ public:
         if(this->b!=nullptr)
         {
             this->b->cuda();
-        }
-        if(this->out!=nullptr)
-        {
-            this->out->cuda();
         }
     }
 
@@ -66,9 +81,28 @@ public:
         {
             this->b->cpu();
         }
-        if(this->out!=nullptr)
+    }
+
+    Tensor<T> forward(Tensor<T> X)
+    {
+        vector<uint16_t> output_shape;
+        for(int i=0; i<X.dim-1; i++)
         {
-            this->out->cpu();
+            output_shape.push_back(X.tensor_shape[i]);
         }
+        output_shape.push_back(this->W->m);
+        Tensor<T> out(output_shape);
+        if(X.is_cuda == true)
+        {
+            out.cuda();
+        }
+
+        //this->save_X = X;
+        mat_mul(X, *W, out);
+        if(this->b!=nullptr)
+        {
+            matadd(out, *b, out);
+        }
+        return out;
     }
 };
