@@ -56,7 +56,7 @@ __host__ int main()
     Tensor<float> output = linear_1.forward(input);
     clock_t gpu_end1 = clock();
     double gpu_time1 = (double)(gpu_end1 - gpu_start1) / CLOCKS_PER_SEC;
-    printf("forward time: %f\n", gpu_time1);
+    printf("\nforward time: %f\n", gpu_time1);
     output.print();
     return 0;
 }
