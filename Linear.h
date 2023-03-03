@@ -32,11 +32,31 @@ public:
 
     ~Linear()
     {
-        delete W;
-        delete b;
-        delete dW;
-        delete db;
-        delete save_X;
+        if(this->W!=nullptr)
+        {
+            delete W;
+            this->W=nullptr;
+        }
+        if(this->b!=nullptr)
+        {
+            delete b;
+            this->b=nullptr;
+        }
+        if(this->dW!=nullptr)
+        {
+            delete dW;
+            this->dW=nullptr;
+        }
+        if(this->db!=nullptr)
+        {
+            delete db;
+            this->db=nullptr;
+        }
+        if(this->save_X!=nullptr)
+        {
+            delete save_X;
+            this->save_X=nullptr;
+        }
     }
 
     void weight_print()
@@ -97,12 +117,14 @@ public:
             out.cuda();
         }
 
-        //this->save_X = X;
+        this->save_X = new Tensor<T>(X);
+        
         mat_mul(X, *W, out);
         if(this->b!=nullptr)
         {
             matadd(out, *b, out);
         }
+        out.is_leaf=false;
         return out;
     }
 };

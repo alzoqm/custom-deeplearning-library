@@ -21,17 +21,17 @@ typedef struct BitField{
 template <typename T>
 class Tensor{
 public:
-    T *value; // Pointer to the data stored in the tensor
-    T *temp_value; // Pointer to a temporary storage for the data in the tensor
+    T *value=nullptr; // Pointer to the data stored in the tensor
+    T *temp_value=nullptr; // Pointer to a temporary storage for the data in the tensor
     vector<uint16_t> tensor_shape; // Array of uint16_t values that represent the shape of the tensor
-    uint32_t n; // Number of rows in the tensor
-    uint32_t m; // Number of columns in the tensor
-    int8_t dim; // int8_tacter that represents the number of dimensions of the tensor
-    uint32_t sum_size; // Integer that represents the sum of the size of the tensor
-    bool *mask; // Later, implement the relevant function
-    bool is_cuda; // Boolean flag that indicates whether the tensor is stored on a GPU or not
-    bool requeird_grad;
-    bool is_leaf;
+    uint32_t n=0; // Number of rows in the tensor
+    uint32_t m=0; // Number of columns in the tensor
+    int8_t dim=-1; // int8_tacter that represents the number of dimensions of the tensor
+    uint32_t sum_size=0; // Integer that represents the sum of the size of the tensor
+    bool *mask=nullptr; // Later, implement the relevant function
+    bool is_cuda=false; // Boolean flag that indicates whether the tensor is stored on a GPU or not
+    bool requeird_grad=false;
+    bool is_leaf=true;
 public:
     
     Tensor()
@@ -144,6 +144,35 @@ public:
         this->is_cuda = false;
     }
 
+    Tensor(const Tensor& other)
+    {
+        this->is_cuda = other.is_cuda;
+        this->requeird_grad = other.requeird_grad;
+        this->is_leaf = other.is_leaf;
+        this->sum_size = other.sum_size;
+        this->dim = other.dim;
+        this->n = other.n;
+        this->m = other.m;
+        this->tensor_shape = other.tensor_shape;
+
+        if(other.mask!=nullptr)
+        {
+            this->mask = new bool[this->sum_size];
+            memcpy(this->mask, other.value, sizeof(T)*this->sum_size);
+        }
+
+        if(this->is_cuda==true)
+        {
+            cudaMalloc((void**)&this->value, sizeof(T)*this->sum_size);
+            cudaMemcpy(this->value, other.value, sizeof(T)*this->sum_size, cudaMemcpyDeviceToDevice);
+        }
+        else
+        {
+            this->value = new T[this->sum_size];
+            memcpy(this->value, other.value, sizeof(T)*this->sum_size);
+        }
+    }
+
     ~Tensor() // Destructor for the Tensor class
     {   
         if(this->is_cuda==true) // Check if the tensor is stored on a GPU or in CPU memory
@@ -155,6 +184,11 @@ public:
         {
             delete this->value;
             this->value=NULL;
+        }
+        if(this->mask!=nullptr) // if mask is not nullptr
+        {
+            delete this->mask;
+            this->mask=nullptr;
         }
     }
 
@@ -636,6 +670,7 @@ public:
         cudaFree(this->temp_value);
         // Update the flag to indicate that the tensor data is now stored on the GPU
         this->is_cuda = true;
+        this->temp_value=nullptr;
     }
 
     void cpu() // allocate the tensor data from the GPU memory to the CPU memory.
@@ -658,6 +693,7 @@ public:
         delete this->temp_value;
         // Update the flag to indicate that the tensor data is now stored on the CPU
         this->is_cuda = false;
+        this->temp_value=nullptr;
     }
 
     void squeeze(int dim=300)
@@ -812,6 +848,7 @@ public:
 
         delete[] array_ptr;
     }
+
 };
 
 #endif
