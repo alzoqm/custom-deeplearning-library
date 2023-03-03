@@ -10,7 +10,7 @@ half type class 구현 <br>
 
 다음에 추가할 것<br>
 half class 연산 추가 지원<br>
-nn 파일 생성 후 신경망 구현<br>
+Linear class 생성 및 forward 구현 <br>
 
 23-02-23 repo 이름 변경<br>
 repo rename cuda_study -> deeplearning library <br>
