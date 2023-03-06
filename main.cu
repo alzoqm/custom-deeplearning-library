@@ -64,9 +64,9 @@ __host__ int main()
     cudaMemGetInfo(&before_free, &before_total);
     printf("Total GPU memory: %lu MB\nbefore Free GPU memory: %lu MB\n", before_total/1000000, before_free/1000000);
     clock_t create_start = clock();
-    Tensor<float> input(2, {128, 3072, 3072});
-    Linear<float> linear_1(3072, 3072, true);
-    Tensor<float> label(2, {3072, 3072});
+    Tensor<float> input(2, {128, 1024, 1024});
+    Linear<float> linear_1(1024, 1024, true);
+    Tensor<float> label(2, {1024, 1024});
     clock_t create_end = clock();
     double create_time = (double)(create_end - create_start) / CLOCKS_PER_SEC;
 
