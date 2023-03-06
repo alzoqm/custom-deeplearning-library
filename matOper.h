@@ -112,6 +112,18 @@ __global__ void Matrix_Mul_b(T *a,T *b, T *c, uint32_t bs, uint32_t n, uint32_t 
 }
 
 template <typename T>
+__global__ void gpu_trans(T *a, T *b, uint32_t bs, uint32_t n, uint32_t m)
+{
+    int l = blockIdx.x * blockDim.x + threadIdx.x;
+    int i = blockIdx.y * blockDim.y + threadIdx.y; 
+    int j = blockIdx.z * blockDim.z + threadIdx.z;
+    if(l < bs && i < n && j < m)
+    {
+        b[l*n*m + j*n + i] = a[l*n*m + i*m + j];
+    }
+}
+
+template <typename T>
 void cpu_Matrix_Add(T &a, T &b, T &c)
 {
     int max_b = b.n*b.m;
@@ -194,12 +206,12 @@ void cpu_Matrix_Mul_a(T *a, T *b, T *c, uint16_t bs, uint16_t n, uint16_t m, uin
 {
     for(int l=0; l<bs; l++)
     {
-        for (int i = 0; i < n; ++i) 
+        for (int i = 0; i < n; i++) 
         {
-            for (int j = 0; j < p; ++j) 
+            for (int j = 0; j < p; j++) 
             {
                 T sum = 0.;
-                for (int k = 0; k < m; ++k) 
+                for (int k = 0; k < m; k++) 
                 {
                     //sum += a[l*n*m + i * m + k] * b[l*m*p + k * p + j];
                     sum += a[(l%max_a)*n*m + i * m + k] * b[l*m*p + k * p + j];
@@ -216,17 +228,32 @@ void cpu_Matrix_Mul_b(T *a, T *b, T *c, uint16_t bs, uint16_t n, uint16_t m, uin
     for(int l=0; l<bs; l++)
     {
         //printf("%d\n\n", l%max_b*m*p );
-        for (int i = 0; i < n; ++i) 
+        for (int i = 0; i < n; i++) 
         {
-            for (int j = 0; j < p; ++j) 
+            for (int j = 0; j < p; j++) 
             {
                 T sum = 0.;
-                for (int k = 0; k < m; ++k) 
+                for (int k = 0; k < m; k++) 
                 {
                     //sum += a[l*n*m + i * m + k] * b[l*m*p + k * p + j];
                     sum += a[l*n*m + i * m + k] * b[(l%max_b)*m*p + k * p + j];
                 }
                 c[l*n*p + i * p + j] = sum;
+            }
+        }
+    }
+}
+
+template <typename T>
+void cpu_trans(T *a, T *b, uint16_t bs, uint16_t n, uint16_t m)
+{
+    for(int l=0; l<bs; l++)
+    {
+        for(int i=0; i<n; i++)
+        {
+            for(int j=0; j<m; j++)
+            {
+                b[l*n*m + j*n + i] = a[l*n*m + i*m + j];
             }
         }
     }
@@ -950,6 +977,83 @@ void mat_mul(Tensor<T> &a, Tensor<T> &b, Tensor<T> &c)
         {
             cpu_Matrix_Mul_b<T>(a.value, b.value, c.value, max_a, a_n, a_m, b_m, max_b);
         }
+    }
+}
+
+template <typename T>
+Tensor<T> trans(Tensor<T> &a)
+{
+    if(a.dim==1)
+    {
+        Tensor<T> out(a.tensor_shape);
+        return out;
+    }
+    vector<uint16_t> out_shape(a.dim);
+    for(int i=0; i<a.dim-2; i++)
+    {
+        out_shape[i] = a.tensor_shape[i];
+    }
+    out_shape[a.dim-2] = a.tensor_shape[a.dim-1];
+    out_shape[a.dim-1] = a.tensor_shape[a.dim-2];
+    Tensor<T> out(out_shape);
+    int n = a.tensor_shape[a.dim-2];
+    int bs = a.n / n;
+    int m = a.m;
+    if(a.is_cuda==true)
+    {
+        out.cuda();
+        dim3 block(4, 16, 16);
+        dim3 grid((bs + block.x - 1) / block.x, (n + block.y - 1) / block.y, (m + block.z - 1) / block.z);
+        gpu_trans<<<grid, block>>>(a.value, out.value, bs, n, m);
+        return out;
+    }
+    else
+    {
+        cpu_trans(a.value, out.value, bs, n, m);
+        out.print();
+        return out;
+    }
+}
+
+template <typename T>
+void trans(Tensor<T> &a, Tensor<T> &out)
+{
+    if(a.dim != out.dim)
+    {
+        throw std::invalid_argument("input and output must be same dim\n");
+    }
+    if(a.is_cuda != out.is_cuda)
+    {
+        throw std::runtime_error("input and output device is not same\n");
+    }
+    if(a.dim==1)
+    {
+        return;
+    }
+    for(int i=0; i<a.dim-2; i++)
+    {
+        if(a.tensor_shape[i] != out.tensor_shape[i])
+        {
+            throw std::invalid_argument("input and output shape is not match\n");
+        }
+    }
+    if(out.tensor_shape[out.dim-2] != a.tensor_shape[a.dim-1] || out.tensor_shape[out.dim-1] != a.tensor_shape[a.dim-2])
+    {
+        throw std::invalid_argument("input and output shape is not match\n");
+    }
+    int n = a.tensor_shape[a.dim-2];
+    int bs = a.n / n;
+    int m = a.m;
+    if(a.is_cuda==true)
+    {
+        out.cuda();
+        dim3 block(4, 16, 16);
+        dim3 grid((bs + block.x - 1) / block.x, (n + block.y - 1) / block.y, (m + block.z - 1) / block.z);
+        gpu_trans<<<grid, block>>>(a.value, out.value, bs, n, m);
+    }
+    else
+    {
+        cpu_trans(a.value, out.value, bs, n, m);
     }
 }
 

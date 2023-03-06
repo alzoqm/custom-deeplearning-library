@@ -114,6 +114,32 @@ public:
         this->is_cuda = false;
     }
 
+    Tensor(T *value, initializer_list<uint16_t> shape)
+    {
+        this->dim = static_cast<int8_t>(shape.size()); // Assign the number of dimensions
+
+        // Store the shape information in a vector
+        this->tensor_shape = vector<uint16_t>(shape);
+
+        // Calculate the total size of the tensor by multiplying the shape information
+        this->sum_size = 1;
+        for(int i=0; i<dim; i++)
+        {
+            this->sum_size = this->sum_size * this->tensor_shape[i];
+        }
+
+        // Calculate the number of rows and columns in the tensor
+        this->m = this->tensor_shape[this->dim-1];
+        this->n = this->sum_size / this->m;
+
+        // Allocate memory for the 'value' array and copy the values from the input 'value' argument
+        this->value = new T[this->sum_size];
+        memcpy(this->value, value, this->sum_size * sizeof(T));
+
+        // Set the 'is_cuda' member to false (indicating that the tensor is not stored on a GPU)
+        this->is_cuda = false;
+    }
+
     Tensor(T value, initializer_list<uint16_t> shape) // Constructor allocation Value to Tensor
     {
         this->dim = static_cast<int8_t>(shape.size()); // Assign the number of dimensions
@@ -178,12 +204,12 @@ public:
         if(this->is_cuda==true) // Check if the tensor is stored on a GPU or in CPU memory
         {
             cudaFree(this->value);
-            this->value=NULL;
+            this->value=nullptr;
         }
         else // else in cpu
         {
             delete this->value;
-            this->value=NULL;
+            this->value=nullptr;
         }
         if(this->mask!=nullptr) // if mask is not nullptr
         {
