@@ -13,7 +13,7 @@ transpose 구현<br><br>
 다음에 추가할 것<br>
 matCal 브로그캐스팅 지원
 half class 연산 추가 지원<br>
-forward와 backward 이후 함수에서 main으로 돌아올 때 많은 시간이 걸리는 것 고치기<br>
+graident 계산을 위해 저장한 크기를 줄여서 저장하기 (메모리 효율 및 backward 시 속도 상승) <br>
 
 23-02 repo 이름 변경<br>
 repo rename cuda_study -> deeplearning library <br>
