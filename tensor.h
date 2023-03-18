@@ -199,6 +199,35 @@ public:
         }
     }
 
+    Tensor(const Tensor *other)
+    {
+        this->is_cuda = other->is_cuda;
+        this->requeird_grad = other->requeird_grad;
+        this->is_leaf = other->is_leaf;
+        this->sum_size = other->sum_size;
+        this->dim = other->dim;
+        this->n = other->n;
+        this->m = other->m;
+        this->tensor_shape = other->tensor_shape;
+
+        if(other->mask!=nullptr)
+        {
+            this->mask = new bool[this->sum_size];
+            memcpy(this->mask, other->value, sizeof(T)*this->sum_size);
+        }
+
+        if(this->is_cuda==true)
+        {
+            cudaMalloc((void**)&this->value, sizeof(T)*this->sum_size);
+            cudaMemcpy(this->value, other->value, sizeof(T)*this->sum_size, cudaMemcpyDeviceToDevice);
+        }
+        else
+        {
+            this->value = new T[this->sum_size];
+            memcpy(this->value, other->value, sizeof(T)*this->sum_size);
+        }
+    }
+
     ~Tensor() // Destructor for the Tensor class
     {   
         if(this->is_cuda==true) // Check if the tensor is stored on a GPU or in CPU memory

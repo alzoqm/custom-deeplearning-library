@@ -980,12 +980,47 @@ void mat_mul(Tensor<T> &a, Tensor<T> &b, Tensor<T> &c)
     }
 }
 
+// template <typename T>
+// Tensor<T> trans(Tensor<T> &a)
+// {
+//     if(a.dim==1)
+//     {
+//         Tensor<T> out(a.tensor_shape);
+//         return out;
+//     }
+//     vector<uint16_t> out_shape(a.dim);
+//     for(int i=0; i<a.dim-2; i++)
+//     {
+//         out_shape[i] = a.tensor_shape[i];
+//     }
+//     out_shape[a.dim-2] = a.tensor_shape[a.dim-1];
+//     out_shape[a.dim-1] = a.tensor_shape[a.dim-2];
+//     Tensor<T> out(out_shape);
+//     int n = a.tensor_shape[a.dim-2];
+//     int bs = a.n / n;
+//     int m = a.m;
+//     if(a.is_cuda==true)
+//     {
+//         out.cuda();
+//         dim3 block(4, 16, 16);
+//         dim3 grid((bs + block.x - 1) / block.x, (n + block.y - 1) / block.y, (m + block.z - 1) / block.z);
+//         gpu_trans<<<grid, block>>>(a.value, out.value, bs, n, m);
+//         return out;
+//     }
+//     else
+//     {
+//         cpu_trans(a.value, out.value, bs, n, m);
+//         out.print();
+//         return out;
+//     }
+// }
+
 template <typename T>
-Tensor<T> trans(Tensor<T> &a)
+Tensor<T> *trans(Tensor<T> &a)
 {
     if(a.dim==1)
     {
-        Tensor<T> out(a.tensor_shape);
+        Tensor<T> *out = new Tensor<T>(a.tensor_shape);
         return out;
     }
     vector<uint16_t> out_shape(a.dim);
@@ -995,22 +1030,21 @@ Tensor<T> trans(Tensor<T> &a)
     }
     out_shape[a.dim-2] = a.tensor_shape[a.dim-1];
     out_shape[a.dim-1] = a.tensor_shape[a.dim-2];
-    Tensor<T> out(out_shape);
+    Tensor<T> *out = new Tensor<T>(out_shape);
     int n = a.tensor_shape[a.dim-2];
     int bs = a.n / n;
     int m = a.m;
     if(a.is_cuda==true)
     {
-        out.cuda();
+        out->cuda();
         dim3 block(4, 16, 16);
         dim3 grid((bs + block.x - 1) / block.x, (n + block.y - 1) / block.y, (m + block.z - 1) / block.z);
-        gpu_trans<<<grid, block>>>(a.value, out.value, bs, n, m);
+        gpu_trans<<<grid, block>>>(a.value, out->value, bs, n, m);
         return out;
     }
     else
     {
-        cpu_trans(a.value, out.value, bs, n, m);
-        out.print();
+        cpu_trans(a.value, out->value, bs, n, m);
         return out;
     }
 }

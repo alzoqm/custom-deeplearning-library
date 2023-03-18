@@ -103,43 +103,70 @@ public:
         }
     }
 
-    Tensor<T> forward(Tensor<T> X)
+    // Tensor<T>* forward(Tensor<T> &X) {
+    //     vector<uint16_t> output_shape;
+    //     for (int i = 0; i < X.dim - 1; i++) {
+    //         output_shape.push_back(X.tensor_shape[i]);
+    //     }
+    //     output_shape.push_back(this->W->m);
+    //     Tensor<T>* out = new Tensor<T>(output_shape);
+
+    //     if (X.is_cuda == true) {
+    //         out->cuda();
+    //     }
+
+    //     this->save_X = new Tensor<T>(X);
+    //     mat_mul(X, *W, *out);
+    //     if (this->b != nullptr) {
+    //         matadd(*out, *b, *out);
+    //     }
+
+    //     //out->is_leaf = false;
+    //     return this->save_X;
+    // }
+
+    Tensor<T>* forward(Tensor<T> *X) 
     {
         vector<uint16_t> output_shape;
-        for(int i=0; i<X.dim-1; i++)
+        for (int i = 0; i < X->dim - 1; i++) 
         {
-            output_shape.push_back(X.tensor_shape[i]);
+            output_shape.push_back(X->tensor_shape[i]);
         }
         output_shape.push_back(this->W->m);
-        Tensor<T> out(output_shape);
-        if(X.is_cuda == true)
+        Tensor<T>* out = new Tensor<T>(output_shape);
+
+        if (X->is_cuda == true) 
         {
-            out.cuda();
+            out->cuda();
+        }
+        if(this->save_X!=nullptr)
+        {
+            delete save_X; // 메모리 누수 방지
+        }
+        this->save_X = new Tensor<T>(X);
+        mat_mul(*X, *W, *out);
+        if (this->b != nullptr) 
+        {
+            matadd(*out, *b, *out);
         }
 
-        this->save_X = new Tensor<T>(X);
-        
-        mat_mul(X, *W, out);
-        if(this->b!=nullptr)
-        {
-            matadd(out, *b, out);
-        }
-        //out.is_leaf=false;
+        //out->is_leaf = false;
         return out;
     }
 
-    Tensor<T> backward(Tensor<T> dout)
+    Tensor<T> *backward(Tensor<T> *dout)
     {
         vector<uint16_t> dW_shape(this->save_X->dim);
         vector<uint16_t> db_shape(2);
         db_shape[1] = this->b->tensor_shape[0];
         db_shape[0] = 1;
+
         for(int i=0; i<this->save_X->dim-2; i++)
         {
             dW_shape[i] = this->save_X->tensor_shape[i];
         }
         dW_shape[this->save_X->dim-2] = this->W->tensor_shape[0];
-        dW_shape[this->save_X->dim-1] = dout.tensor_shape[dout.dim-1];
+        dW_shape[this->save_X->dim-1] = dout->tensor_shape[dout->dim-1];
         this->dW = new Tensor<T>(dW_shape);
         this->db = new Tensor<T>(db_shape);
         if(this->save_X->is_cuda==true)
@@ -147,9 +174,10 @@ public:
             this->dW->cuda();
             this->db->cuda();
         }
+
         Tensor<T> save_X_T = trans(*save_X);
-        mat_mul(save_X_T, dout, *dW);
-        sum(dout, *db, 0);
+        mat_mul(save_X_T, *dout, *dW);
+        sum(*dout, *db, 0);
 
         // learninr rate를 통한 학습 코드 넣기
         
@@ -157,19 +185,20 @@ public:
         this->dW=nullptr;
         delete this->db;
         this->db=nullptr;
-
+        
         vector<uint16_t> dX_shape(2);
-        dX_shape[0] = dout.tensor_shape[0];
+        dX_shape[0] = dout->tensor_shape[0];
         dX_shape[1] = this->W->tensor_shape[0];
         Tensor<T> W_T = trans(*W);
-        Tensor<T> dX(dX_shape);
-        if(dout.is_cuda==true)
+        Tensor<T> *dX = new Tensor<T>(dX_shape);
+        if(dout->is_cuda==true)
         {
-            dX.cuda();
+            dX->cuda();
         }
-        mat_mul(dout, W_T, dX);
+        mat_mul(*dout, W_T, *dX);
         delete this->save_X;
         this->save_X=nullptr;
+
         return dX;
     }
 };
