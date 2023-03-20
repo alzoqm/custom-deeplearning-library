@@ -9,11 +9,11 @@ Linear.h 추가<br><br>
 23-03<br>
 Linear class 생성 및 forward 및 backward 구현 <br>
 transpose 구현<br><br>
-
+23-03-20<br>
+Linear forward 및 backward 시 속도 및 메모리 사용량 최적화 <br><br>
 다음에 추가할 것<br>
-matCal 브로그캐스팅 지원
+matCal 브로그캐스팅 지원<br>
 half class 연산 추가 지원<br>
-graident 계산을 위해 저장한 크기를 줄여서 저장하기 (메모리 효율 및 backward 시 속도 상승) <br>
 
 23-02 repo 이름 변경<br>
 repo rename cuda_study -> deeplearning library <br>
