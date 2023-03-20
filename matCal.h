@@ -306,6 +306,54 @@ void sum(Tensor<T> &input, Tensor<T> &output, int dim=300, bool keepdim=false)
 }
 
 template <typename T>
+Tensor<T> *sum(Tensor<T> &input, int dim=300, bool keepdim=false)
+{
+    if(dim < 0)
+    {
+        dim = input.dim + dim;
+    }
+    vector<uint16_t> output_shape(input.dim);
+    for(int i=0; i<input.dim; i++)
+    {
+        if(i==dim)
+        {
+            output_shape[i] = 1;
+        }
+        else
+        {
+            output_shape[i] = input.tensor_shape[i];
+        }
+    }
+    Tensor<T> *output = new Tensor<T>(output_shape, input.is_cuda);
+    int upper_sum_shape = 1;
+    int lower_sum_shape = 1;
+    for(int i=0; i<dim; i++)
+    {
+        upper_sum_shape *= input.tensor_shape[i];
+    }
+    for(int i=input.dim-1; i>dim; i--)
+    {
+        lower_sum_shape *= input.tensor_shape[i];
+    }
+
+    if(input.is_cuda==true)
+    {   
+        dim3 block(16, 16);
+        dim3 grid((upper_sum_shape + block.x - 1) / block.x, (lower_sum_shape + block.y - 1) / block.y);
+        gpu_sum<T><<<grid, block>>>(input.value, output->value, upper_sum_shape, lower_sum_shape, input.tensor_shape[dim]);
+    }
+    else
+    {
+        cpu_sum(input.value, output->value, upper_sum_shape, lower_sum_shape, input.tensor_shape[dim]);
+    }
+    if(keepdim==false)
+    {
+        output->squeeze(dim);
+    }
+    return output;
+}
+
+template <typename T>
 __global__ void gpu_mean(T *a, T *b, int upper_sum_shape, int lower_sum_shape, uint16_t t_shape)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x; 

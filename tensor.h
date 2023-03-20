@@ -36,7 +36,7 @@ public:
     
     Tensor()
     {}
-    Tensor(initializer_list<uint16_t> shape)
+    Tensor(initializer_list<uint16_t> shape, bool is_cuda=false)
     {
         this->dim = static_cast<int8_t>(shape.size()); // Assign the number of dimensions
 
@@ -55,14 +55,48 @@ public:
         this->n = this->sum_size / this->m;
 
         // Allocate memory for the 'value' array and fill it with 0
-        this->value = new T[this->sum_size];
-        memset(this->value, 0, sizeof(T)*this->sum_size);
+        if(is_cuda)
+        {
+            cudaMalloc(&this->value, sizeof(T)*this->sum_size);
+        }
+        else
+        {
+            this->value = new T[this->sum_size];
+            memset(this->value, 0, sizeof(T)*this->sum_size);
+        }
 
-        // Set the 'is_cuda' member to false (indicating that the tensor is not stored on a GPU)
-        this->is_cuda = false;
+        // Set the 'is_cuda' member to the value of the argument
+        this->is_cuda = is_cuda;
     }
 
-    Tensor(vector<uint16_t> shape)
+
+    // Tensor(vector<uint16_t> shape)
+    // {
+    //     this->dim = static_cast<int8_t>(shape.size()); // Assign the number of dimensions
+
+    //     // Store the shape information in a vector
+    //     this->tensor_shape = vector<uint16_t>(shape);
+
+    //     // Calculate the total size of the tensor by multiplying the shape information
+    //     this->sum_size = 1;
+    //     for(int i=0; i<dim; i++)
+    //     {
+    //         this->sum_size = this->sum_size * this->tensor_shape[i];
+    //     }
+
+    //     // Calculate the number of rows and columns in the tensor
+    //     this->m = this->tensor_shape[this->dim-1];
+    //     this->n = this->sum_size / this->m;
+
+    //     // Allocate memory for the 'value' array and fill it with 0
+    //     this->value = new T[this->sum_size];
+    //     memset(this->value, 0, sizeof(T)*this->sum_size);
+
+    //     // Set the 'is_cuda' member to false (indicating that the tensor is not stored on a GPU)
+    //     this->is_cuda = false;
+    // }
+
+    Tensor(vector<uint16_t> shape, bool is_cuda=false)
     {
         this->dim = static_cast<int8_t>(shape.size()); // Assign the number of dimensions
 
@@ -80,15 +114,27 @@ public:
         this->m = this->tensor_shape[this->dim-1];
         this->n = this->sum_size / this->m;
 
-        // Allocate memory for the 'value' array and fill it with 0
-        this->value = new T[this->sum_size];
-        memset(this->value, 0, sizeof(T)*this->sum_size);
+        if (is_cuda) 
+        {
+            // Allocate memory on the GPU and fill it with 0
+            cudaMalloc(&this->value, sizeof(T)*this->sum_size);
+            cudaMemset(this->value, 0, sizeof(T)*this->sum_size);
 
-        // Set the 'is_cuda' member to false (indicating that the tensor is not stored on a GPU)
-        this->is_cuda = false;
+            // Set the 'is_cuda' member to true (indicating that the tensor is stored on a GPU)
+            this->is_cuda = true;
+        } else 
+        {
+            // Allocate memory on the CPU and fill it with 0
+            this->value = new T[this->sum_size];
+            memset(this->value, 0, sizeof(T)*this->sum_size);
+
+            // Set the 'is_cuda' member to false (indicating that the tensor is not stored on a GPU)
+            this->is_cuda = false;
+        }
     }
 
-    Tensor(initializer_list<T> value, initializer_list<uint16_t> shape)
+
+    Tensor(initializer_list<T> value, initializer_list<uint16_t> shape, bool is_cuda=false)
     {
         this->dim = static_cast<int8_t>(shape.size()); // Assign the number of dimensions
 
@@ -107,14 +153,23 @@ public:
         this->n = this->sum_size / this->m;
 
         // Allocate memory for the 'value' array and copy the values from the input 'value' argument
-        this->value = new T[this->sum_size];
-        copy(value.begin(), value.end(), this->value);
+        if(is_cuda)
+        {
+            cudaMalloc(&this->value, sizeof(T)*this->sum_size);
+            cudaMemcpy(this->value, value.begin(), sizeof(T)*this->sum_size, cudaMemcpyHostToDevice);
+        }
+        else
+        {
+            this->value = new T[this->sum_size];
+            copy(value.begin(), value.end(), this->value);
+        }
 
-        // Set the 'is_cuda' member to false (indicating that the tensor is not stored on a GPU)
-        this->is_cuda = false;
+        // Set the 'is_cuda' member to the value of the argument
+        this->is_cuda = is_cuda;
     }
 
-    Tensor(T *value, initializer_list<uint16_t> shape)
+
+    Tensor(T *value, initializer_list<uint16_t> shape, bool is_cuda=false)
     {
         this->dim = static_cast<int8_t>(shape.size()); // Assign the number of dimensions
 
@@ -133,14 +188,23 @@ public:
         this->n = this->sum_size / this->m;
 
         // Allocate memory for the 'value' array and copy the values from the input 'value' argument
-        this->value = new T[this->sum_size];
-        memcpy(this->value, value, this->sum_size * sizeof(T));
+        if(is_cuda)
+        {
+            cudaMalloc(&this->value, sizeof(T)*this->sum_size);
+            cudaMemcpy(this->value, value, sizeof(T)*this->sum_size, cudaMemcpyHostToDevice);
+        }
+        else
+        {
+            this->value = new T[this->sum_size];
+            memcpy(this->value, value, this->sum_size * sizeof(T));
+        }
 
-        // Set the 'is_cuda' member to false (indicating that the tensor is not stored on a GPU)
-        this->is_cuda = false;
+        // Set the 'is_cuda' member to the value of the argument
+        this->is_cuda = is_cuda;
     }
 
-    Tensor(T value, initializer_list<uint16_t> shape) // Constructor allocation Value to Tensor
+
+    Tensor(T value, initializer_list<uint16_t> shape, bool is_cuda) // Constructor allocation Value to Tensor
     {
         this->dim = static_cast<int8_t>(shape.size()); // Assign the number of dimensions
 
@@ -157,18 +221,32 @@ public:
         // Calculate the number of rows and columns in the tensor
         this->m = this->tensor_shape[this->dim-1];
         this->n = this->sum_size / this->m;
-        
+
         // Allocate memory for the 'value' and copy the values from the input 'value' argument
-        this->value = new T[this->sum_size];
-        for(int i=0; i<this->sum_size; i++)
+        if(is_cuda)
         {
-            this->value[i] = value;
+            cudaMalloc((void**)&this->value, this->sum_size*sizeof(T));
+            T* host_value = new T[this->sum_size];
+            for(int i=0; i<this->sum_size; i++)
+            {
+                host_value[i] = value;
+            }
+            cudaMemcpy(this->value, host_value, this->sum_size*sizeof(T), cudaMemcpyHostToDevice);
+            delete[] host_value;
         }
-        //memcpy(this->value, value, this->sum_size*sizeof(T));
+        else
+        {
+            this->value = new T[this->sum_size];
+            for(int i=0; i<this->sum_size; i++)
+            {
+                this->value[i] = value;
+            }
+        }
 
-        // Set the 'is_cuda' member to false (indicating that the tensor is not stored on a GPU)
-        this->is_cuda = false;
+        // Set the 'is_cuda' member to the input value
+        this->is_cuda = is_cuda;
     }
+
 
     Tensor(const Tensor& other)
     {
