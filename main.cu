@@ -24,7 +24,7 @@ __host__ int main()
 
     clock_t run_start = clock();
 
-    for(int i=0; i<1; i++)
+    for(int i=0; i<100; i++)
     {
 
         linear_1.forward(input, output);
