@@ -1,6 +1,10 @@
+#ifndef _LINEAR_H_
+#define _LINEAR_H_
+
 #include "tensor.h"
 #include "matOper.h"
 #include "matCal.h"
+#include "activation.h"
 
 using namespace std;
 
@@ -124,8 +128,7 @@ public:
             this->save_X->unsqueeze(0);
         }
         
-        //this->save_X = sum(*X, 0, false);
-        sum(*X, *save_X, 0, false); // 다른 차원 간의 연산 지원하기
+        sum(*X, *save_X, 0, false); 
         
         mat_mul(*X, *W, *out);
         if (this->b != nullptr) 
@@ -150,6 +153,7 @@ public:
         sum(*X, *save_X, 0, false); // 다른 차원 간의 연산 지원하기
         
         mat_mul(*X, *W, *out);
+        
         if (this->b != nullptr) 
         {
             matadd(*out, *b, *out);
@@ -247,3 +251,6 @@ public:
         mat_mul(*dout, *W_T, *dX);
     }
 };
+
+
+#endif

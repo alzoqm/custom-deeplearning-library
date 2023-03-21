@@ -1080,7 +1080,6 @@ void trans(Tensor<T> &a, Tensor<T> &out)
     int m = a.m;
     if(a.is_cuda==true)
     {
-        out.cuda();
         dim3 block(4, 16, 16);
         dim3 grid((bs + block.x - 1) / block.x, (n + block.y - 1) / block.y, (m + block.z - 1) / block.z);
         gpu_trans<<<grid, block>>>(a.value, out.value, bs, n, m);
