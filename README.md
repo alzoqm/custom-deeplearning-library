@@ -9,8 +9,9 @@ Linear.h 추가<br><br>
 23-03<br>
 Linear class 생성 및 forward 및 backward 구현 <br>
 transpose 구현<br><br>
-23-03-20<br>
-Linear forward 및 backward 시 속도 및 메모리 사용량 최적화 <br><br>
+Linear forward 및 backward 시 속도 및 메모리 사용량 최적화 <br>
+활성화 함수 추가<br><br>
+
 다음에 추가할 것<br>
 matCal 브로그캐스팅 지원<br>
 half class 연산 추가 지원<br>
