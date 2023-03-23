@@ -19,8 +19,8 @@ private:
     Tensor<T> *W_T=nullptr;
     Tensor<T> *save_X_T=nullptr;
     bool have_bias=false;
-public:
     Tensor<T> *save_X=nullptr;
+
 public:
     Linear(uint16_t in_dim, uint16_t out_dim, bool add_bias = true, bool is_cuda=false)
     {
@@ -62,6 +62,16 @@ public:
         {
             delete save_X;
             this->save_X=nullptr;
+        }
+        if(this->W_T!=nullptr)
+        {
+            delete W_T;
+            this->W_T=nullptr;
+        }
+        if(this->save_X_T!=nullptr)
+        {
+            delete save_X_T;
+            this->save_X_T=nullptr;
         }
     }
 

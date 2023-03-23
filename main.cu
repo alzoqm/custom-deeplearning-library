@@ -16,6 +16,7 @@ __host__ int main()
     Tensor<float>* output= new Tensor<float>({4, 512, 128}, true);
 
     ReLU<float> relu;
+    Sigmoid<float> sigmoid;
 
     Tensor<float> *dout = new Tensor<float>(1, {512, 128}, true);
     Tensor<float>* dx = new Tensor<float>({512, 256}, true);
@@ -24,12 +25,12 @@ __host__ int main()
 
     clock_t run_start = clock();
 
-    for(int i=0; i<100; i++)
+    for(int i=0; i<150; i++)
     {
 
         linear_1.forward(input, output);
-        relu.forward(output);
-        relu.backward(dout);
+        sigmoid.forward(output);
+        sigmoid.backward(dout);
         linear_1.backward(dout, dx);
     }
     clock_t run_end = clock();
