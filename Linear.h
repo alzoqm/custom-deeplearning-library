@@ -25,14 +25,10 @@ public:
     Linear(uint16_t in_dim, uint16_t out_dim, bool add_bias = true, bool is_cuda=false)
     {
         this->W = new Tensor<T>(1, {in_dim, out_dim}, is_cuda); // allocate memory using new operator
+        this->have_bias = add_bias;
         if(add_bias==true)
         {
-            this->have_bias = true;
             this->b = new Tensor<T>(1, {out_dim}, is_cuda); // allocate memory using new operator
-        }
-        else
-        {
-            this->have_bias = false;
         }
     }
 

@@ -14,7 +14,7 @@ OBJS =	main.o	#matoper.o	tensor.o
 $(TARGET): $(OBJS)
 	$(CUDA) -o $(TARGET) $(OBJS)
 
-main.o: main.cu	matCal.h Linear.h activation.h matOper.h tensor.h
+main.o: main.cu	matCal.h Conv2D.h Linear.h activation.h matOper.h tensor.h
 	$(CUDA) $(CUDA_FLAGS) -c main.cu
 
 # # Define the matoper.o object file rule
