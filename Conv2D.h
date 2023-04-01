@@ -20,6 +20,11 @@ private:
     Tensor<T> *dW=nullptr;
     Tensor<T> *db=nullptr;
     bool have_bias=false;
+
+    void cpu_Conv2D_cal(Tensor<T> *X, Tensor<T> *out)
+    {
+
+    }
 public:
     Conv2D(uint16_t in_chans, uint16_t out_chans, uint16_t kernel_size=1, initializer_list<uint16_t> strides={1, 1},
     initializer_list<uint16_t> padding={0, 0}, bool add_bias=false, bool is_cuda=false)
@@ -121,8 +126,16 @@ public:
             this->save_X->unsqueeze(0);
         }
         sum(*X, *save_X, 0, false);
-        uint16_t out_h = out->tensor_shape[1];
-        uint16_t out_w = out->tensor_shape[2];
+        // uint16_t out_h = out->tensor_shape[1];
+        // uint16_t out_w = out->tensor_shape[2];
+        if(X->is_cuda)
+        {
+
+        }
+        else
+        {
+            cpu_Conv2D_cal(X, out);
+        }
         // conv cal_code
     }
 

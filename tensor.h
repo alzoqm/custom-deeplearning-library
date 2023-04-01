@@ -895,7 +895,7 @@ public:
         this->tensor_shape = move(temp_tensor_shape);
     }
 
-    void reshape(initializer_list<int16_t> reshape_array)
+    void reshape(initializer_list<uint16_t> reshape_array)
     {
         int temp_reshape_sum = 1;
         uint32_t reshape_sum = 1;
@@ -908,23 +908,25 @@ public:
 
         for (int i = 0; i < dim; i++)
         {
-            if (array_ptr[i] == -1)
+            if (array_ptr[i] == 0)
             {
                 m1_check += 1;
                 m1_index = i;
             }
-            temp_reshape_sum *= array_ptr[i];
+            else
+            {
+                temp_reshape_sum *= array_ptr[i];
+            }
+            
         }
 
         if (m1_check >= 2)
         {
             throw runtime_error("The value '-1' can only be used once.\n");
         }
-
-        if (temp_reshape_sum < 0) // using -1
+        reshape_sum = temp_reshape_sum;
+        if (m1_check == 1) // using 0
         {
-            reshape_sum = (-temp_reshape_sum);
-
             if (this->sum_size % reshape_sum != 0)
             {
                 throw runtime_error("The total size of the original tensor and the size of the newly defined shape must be the same.1\n");
@@ -933,10 +935,6 @@ public:
             short m1_value = this->sum_size / reshape_sum;
             array_ptr[m1_index] = m1_value;
             reshape_sum *= array_ptr[m1_index];
-        }
-        else
-        {
-            reshape_sum = temp_reshape_sum;
         }
 
         if (this->sum_size != reshape_sum)
@@ -948,10 +946,66 @@ public:
         this->tensor_shape.clear();
         this->tensor_shape.reserve(dim);
         copy(array_ptr, array_ptr + dim, back_inserter(this->tensor_shape));
-
+        this->m = this->tensor_shape[this->dim-1];
+        this->n = this->sum_size / this->m;
         delete[] array_ptr;
     }
 
+    void reshape(vector<uint16_t> reshape_array)
+    {
+        int temp_reshape_sum = 1;
+        uint32_t reshape_sum = 1;
+        int8_t m1_check = 0; // -1 check
+        int8_t m1_index = -1;
+        int dim = reshape_array.size();
+
+        short* array_ptr = new short[dim];
+        copy(reshape_array.begin(), reshape_array.end(), array_ptr);
+
+        for (int i = 0; i < dim; i++)
+        {
+            if (array_ptr[i] == 0)
+            {
+                m1_check += 1;
+                m1_index = i;
+            }
+            else
+            {
+                temp_reshape_sum *= array_ptr[i];
+            }
+            
+        }
+
+        if (m1_check >= 2)
+        {
+            throw runtime_error("The value '-1' can only be used once.\n");
+        }
+        reshape_sum = temp_reshape_sum;
+        if (m1_check == 1) // using 0
+        {
+            if (this->sum_size % reshape_sum != 0)
+            {
+                throw runtime_error("The total size of the original tensor and the size of the newly defined shape must be the same.1\n");
+            }
+
+            short m1_value = this->sum_size / reshape_sum;
+            array_ptr[m1_index] = m1_value;
+            reshape_sum *= array_ptr[m1_index];
+        }
+
+        if (this->sum_size != reshape_sum)
+        {
+            throw runtime_error("The total size of the original tensor and the size of the newly defined shape must be the same.\n");
+        }
+
+        this->dim = dim;
+        this->tensor_shape.clear();
+        this->tensor_shape.reserve(dim);
+        copy(array_ptr, array_ptr + dim, back_inserter(this->tensor_shape));
+        this->m = this->tensor_shape[this->dim-1];
+        this->n = this->sum_size / this->m;
+        delete[] array_ptr;
+    }
 };
 
 #endif

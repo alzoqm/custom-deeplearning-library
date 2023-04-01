@@ -885,6 +885,9 @@ void mat_mul(Tensor<T> &a, Tensor<T> &b, Tensor<T> &c)
     }
     if(a.m != b.tensor_shape[b.dim-2])
     {
+        a.print();
+        cout<<a.m<<endl;
+        cout<<b.tensor_shape[b.dim-2]<<endl;
         throw std::runtime_error("tensor1 col size and tensor2 row size must be same\n");
     }
     if(check_a_b_dim==true)
@@ -1015,22 +1018,43 @@ void mat_mul(Tensor<T> &a, Tensor<T> &b, Tensor<T> &c)
 //     }
 // }
 
+// template <typename T>
+// Tensor<T> *trans(Tensor<T> &a)
+// {
+//     if(a.dim==1)
+//     {
+//         Tensor<T> *out = new Tensor<T>(a.tensor_shape);
+//         return out;
+//     }
+//     vector<uint16_t> out_shape(a.dim);
+//     for(int i=0; i<a.dim-2; i++)
+//     {
+//         out_shape[i] = a.tensor_shape[i];
+//     }
+//     out_shape[a.dim-2] = a.tensor_shape[a.dim-1];
+//     out_shape[a.dim-1] = a.tensor_shape[a.dim-2];
+//     Tensor<T> *out = new Tensor<T>(out_shape, a.is_cuda);
+//     int n = a.tensor_shape[a.dim-2];
+//     int bs = a.n / n;
+//     int m = a.m;
+//     if(a.is_cuda==true)
+//     {
+//         //out->cuda();
+//         dim3 block(4, 16, 16);
+//         dim3 grid((bs + block.x - 1) / block.x, (n + block.y - 1) / block.y, (m + block.z - 1) / block.z);
+//         gpu_trans<<<grid, block>>>(a.value, out->value, bs, n, m);
+//         return out;
+//     }
+//     else
+//     {
+//         cpu_trans(a.value, out->value, bs, n, m);
+//         return out;
+//     }
+// }
+
 template <typename T>
-Tensor<T> *trans(Tensor<T> &a)
+void trans(Tensor<T> &a)
 {
-    if(a.dim==1)
-    {
-        Tensor<T> *out = new Tensor<T>(a.tensor_shape);
-        return out;
-    }
-    vector<uint16_t> out_shape(a.dim);
-    for(int i=0; i<a.dim-2; i++)
-    {
-        out_shape[i] = a.tensor_shape[i];
-    }
-    out_shape[a.dim-2] = a.tensor_shape[a.dim-1];
-    out_shape[a.dim-1] = a.tensor_shape[a.dim-2];
-    Tensor<T> *out = new Tensor<T>(out_shape, a.is_cuda);
     int n = a.tensor_shape[a.dim-2];
     int bs = a.n / n;
     int m = a.m;
@@ -1039,14 +1063,17 @@ Tensor<T> *trans(Tensor<T> &a)
         //out->cuda();
         dim3 block(4, 16, 16);
         dim3 grid((bs + block.x - 1) / block.x, (n + block.y - 1) / block.y, (m + block.z - 1) / block.z);
-        gpu_trans<<<grid, block>>>(a.value, out->value, bs, n, m);
-        return out;
+        gpu_trans<<<grid, block>>>(a.value, a.value, bs, n, m);
     }
     else
     {
-        cpu_trans(a.value, out->value, bs, n, m);
-        return out;
+        cpu_trans(a.value, a.value, bs, n, m);
     }
+    vector<uint16_t> shape = a.tensor_shape;
+    uint16_t temp = shape[a.dim-2];
+    shape[a.dim-2] = shape[a.dim-1];
+    shape[a.dim-1] = temp;
+    a.reshape(shape);
 }
 
 template <typename T>

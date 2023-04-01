@@ -240,15 +240,11 @@ public:
         {
             this->save_X_T = new Tensor<T>({this->save_X->tensor_shape[1], this->save_X->tensor_shape[0]}, this->save_X->is_cuda);
         }
-        
         trans(*save_X, *save_X_T);
         mat_mul(*save_X_T, *dout, *dW);
-        sum(*dout, *db, 0, true);
 
+        //learning rate를 통한 학습 코드 넣기
 
-        // learning rate를 통한 학습 코드 넣기
-        
-        
         if(this->W_T==nullptr)
         {
             this->W_T = new Tensor<T>({W->tensor_shape[1], W->tensor_shape[0]}, W->is_cuda);

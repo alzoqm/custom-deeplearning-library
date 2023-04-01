@@ -12,30 +12,26 @@ __host__ int main()
     cudaMemGetInfo(&before_free, &before_total);
     printf("Total GPU memory: %lu MB\nbefore Free GPU memory: %lu MB\n", before_total/1000000, before_free/1000000);
     clock_t create_start = clock();
-    Tensor<float> *input = new Tensor<float>(1, {4, 512, 512, 256}, true);
-    //Linear<float> linear_1(256, 128, true, true);
-    Conv2D<float> conv_layer(256, 128, 3, {1, 1}, {1, 1}, true, true);
-    Tensor<float>* output= new Tensor<float>({4, 512, 128}, true);
-    Tensor<float> *out = conv_layer.forward(input);
-    out->print();
+    Tensor<float> *input = new Tensor<float>(1, {4, 512, 256}, true);
+    Linear<float> linear_1(256, 128, true, true);
+    //Conv2D<float> conv_layer(256, 128, 3, {1, 1}, {1, 1}, true, true);
+    Tensor<float>* output= new Tensor<float>(1, {4, 512, 128}, true);
     ReLU<float> relu;
     Sigmoid<float> sigmoid;
 
     Tensor<float> *dout = new Tensor<float>(1, {512, 128}, true);
-    Tensor<float>* dx = new Tensor<float>({512, 256}, true);
+    Tensor<float>* dx = new Tensor<float>(1, {512, 256}, true);
     clock_t create_end = clock();
     double create_time = (double)(create_end - create_start) / CLOCKS_PER_SEC;
 
     clock_t run_start = clock();
-
-    // for(int i=0; i<150; i++)
-    // {
-
-    //     linear_1.forward(input, output);
-    //     sigmoid.forward(output);
-    //     sigmoid.backward(dout);
-    //     linear_1.backward(dout, dx);
-    // }
+    for(int i=0; i<1000; i++)
+    {
+        linear_1.forward(input, output);
+        //sigmoid.forward(output);
+        //sigmoid.backward(dout);
+        linear_1.backward(dout, dx);
+    }
     clock_t run_end = clock();
     double run_time = (double)(run_end - run_start) / CLOCKS_PER_SEC;
     size_t free, total;
@@ -46,8 +42,8 @@ __host__ int main()
     printf("create time: %f\n", create_time);
     printf("run time: %f\n", run_time);
     printf("sum time: %f\n", run_time + create_time);
-    // output->print();
-    // dx->print();
+    output->print();
+    dx->print();
 
     return 0;
 }
