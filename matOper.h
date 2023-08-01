@@ -202,7 +202,7 @@ void cpu_MatrixMul(T &a, T &b, T &c)
 }
 
 template <typename T>
-__global__ void cpu_Matrix_Mul_a(T *a, T *b, T *c, uint16_t bs, uint16_t n, uint16_t m, uint16_t p, int max_a)
+__host__ void cpu_Matrix_Mul_a(T *a, T *b, T *c, uint16_t bs, uint16_t n, uint16_t m, uint16_t p, int max_a)
 {
     for(int l=0; l<bs; l++)
     {
@@ -223,7 +223,7 @@ __global__ void cpu_Matrix_Mul_a(T *a, T *b, T *c, uint16_t bs, uint16_t n, uint
 }
 
 template <typename T>
-__global__ void cpu_Matrix_Mul_b(T *a, T *b, T *c, uint16_t bs, uint16_t n, uint16_t m, uint16_t p, int max_b)
+__host__ void cpu_Matrix_Mul_b(T *a, T *b, T *c, uint16_t bs, uint16_t n, uint16_t m, uint16_t p, int max_b)
 {
     for(int l=0; l<bs; l++)
     {
