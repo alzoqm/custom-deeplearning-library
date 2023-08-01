@@ -74,7 +74,7 @@ __global__ void MatrixMul(T *d_a, T *d_b, T *d_c, uint32_t n, uint32_t m, int ma
 }
 
 template <typename T>
-__global__ void Matrix_Mul_a(T *a,T *b, T *c, uint32_t bs, uint32_t n, uint32_t m, uint32_t p, int max_a)
+__device__ void Matrix_Mul_a(T *a,T *b, T *c, uint32_t bs, uint32_t n, uint32_t m, uint32_t p, int max_a)
 { 
     int l = blockIdx.x * blockDim.x + threadIdx.x;
     int i = blockIdx.y * blockDim.y + threadIdx.y; 
@@ -93,7 +93,7 @@ __global__ void Matrix_Mul_a(T *a,T *b, T *c, uint32_t bs, uint32_t n, uint32_t 
 }
 
 template <typename T>
-__global__ void Matrix_Mul_b(T *a,T *b, T *c, uint32_t bs, uint32_t n, uint32_t m, uint32_t p, int max_b)
+__device__ void Matrix_Mul_b(T *a,T *b, T *c, uint32_t bs, uint32_t n, uint32_t m, uint32_t p, int max_b)
 { 
     int l = blockIdx.x * blockDim.x + threadIdx.x;
     int i = blockIdx.y * blockDim.y + threadIdx.y; 
@@ -202,7 +202,7 @@ void cpu_MatrixMul(T &a, T &b, T &c)
 }
 
 template <typename T>
-void cpu_Matrix_Mul_a(T *a, T *b, T *c, uint16_t bs, uint16_t n, uint16_t m, uint16_t p, int max_a)
+__host__ void cpu_Matrix_Mul_a(T *a, T *b, T *c, uint16_t bs, uint16_t n, uint16_t m, uint16_t p, int max_a)
 {
     for(int l=0; l<bs; l++)
     {
@@ -223,7 +223,7 @@ void cpu_Matrix_Mul_a(T *a, T *b, T *c, uint16_t bs, uint16_t n, uint16_t m, uin
 }
 
 template <typename T>
-void cpu_Matrix_Mul_b(T *a, T *b, T *c, uint16_t bs, uint16_t n, uint16_t m, uint16_t p, int max_b)
+__host__ void cpu_Matrix_Mul_b(T *a, T *b, T *c, uint16_t bs, uint16_t n, uint16_t m, uint16_t p, int max_b)
 {
     for(int l=0; l<bs; l++)
     {
